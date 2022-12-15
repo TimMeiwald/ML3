@@ -3,7 +3,7 @@ from enum import IntEnum
 
 
 def syscall():
-    return Binary(0x0F05, 2, 2)
+    return Binary(0x050F, 2, 2)
 
 def modrm(mod: int, r: int, m: int):
     """Intel Volume 2A 2-6

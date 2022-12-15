@@ -45,7 +45,8 @@ class Compiler():
         # Text will start after BSS which has a known size
         self._bss_start = 64+56*2
         self._text_start = self._bss_start + self._symbol_table_._BSS_.raw_size
-        self._symbol_table_.set_offsets(self._bss_start)
+        self._symbol_table_.set_offsets(0x402000)
+        #self._symbol_table_.set_offsets(self._bss_start)
 
     def compile(self, grammar_node):
         assert grammar_node.type == Rules.grammar
@@ -117,13 +118,15 @@ class Compiler():
         # BSS Data is Zero Initialized Aka no data but memory is allocated in program header
         segment_bss_size = self._symbol_table_._BSS_.raw_size 
         segment_text = self.TEXT.get_binary()
-        sizeof_text = len(self.TEXT.instr_stack)
-        start_address= 0x400000
+        print(f"TEXT Segment Size: {segment_text.size}")
         # TODO FIX THIS SHIT
+        #p_header_text = Segment(1, 0,start_address+segment_bss_size,start_address+segment_bss_size, sizeof_text, sizeof_text, 0x5, 0)
+        #p_header_data = Segment(1, 0,start_address,start_address, 0, segment_bss_size, 0x4, 0)
         p_header_text = Segment(1, 0x001000,0x401000,0x401000,0x001000, 0x001000, 0x5, 2**12)
-        p_header_data = Segment(1, 0x002000,0x402000,0x402000,0x001000, 0x001000, 0x4, 2**12)
-        ELF.add_program_segment([p_header_data.binary(), Binary(0,0,0)])
+        p_header_data = Segment(1, 0x002000,0x402000,0x402000,0x001000, 0x001000, 0x2, 2**12)
+        
         ELF.add_program_segment([p_header_text.binary(), self.TEXT.get_binary()])
+        ELF.add_program_segment([p_header_data.binary(), Binary(0,0,0)])
         return ELF
 
 class TEXT():

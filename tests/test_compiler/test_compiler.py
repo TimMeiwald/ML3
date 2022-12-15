@@ -19,15 +19,31 @@ def test_compiler_1():
     print(f"TEXT Start: {c._text_start}")
     x = c.construct_elf_binary()
 
-    print(x._generate_file())
+    #print(x._generate_file()) # Not stateless affects something not good
     x = x.write_to_file("TestExecutable.elf")
+    #print(c.construct_elf_binary()._generate_file())
     assert 0 == 1
 
 # def test_compiler_2():
 #     node = compiler_test(2)
 
-# def test_compiler_3():
-#     node = compiler_test(3)
-#     c = Compiler()
-#     c.compile(node)
-#     assert 0 == 1
+def test_compiler_3():
+    node = compiler_test(3)
+    s = SymbolTable()
+    s.symbolize(node)
+    #s.get_variable("status_code")
+    c = Compiler(s)
+    c.compile(node)
+    print(c.TEXT)
+    binary = c.TEXT.get_binary()
+    print("\n")
+    print(binary)
+    print("\n")
+    print(f"BSS START: {c._bss_start}")
+    print(f"TEXT Start: {c._text_start}")
+    x = c.construct_elf_binary()
+
+    #print(x._generate_file()) # Not stateless affects something not good
+    x = x.write_to_file("TestExecutable2.elf")
+    #print(c.construct_elf_binary()._generate_file())
+    assert 0 == 1
