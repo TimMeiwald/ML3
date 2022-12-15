@@ -1,0 +1,62 @@
+<Alphabet_Upper> PASSTHROUGH ="A"/"B"/"C"/"D"/"E"/"F"/"G"/"H"/"I"/"J"/"K"/"L"/"M"/"N"/"O"/"P"/"Q"/"R"/"S"/"T"/"U"/"V"/"W"/"X"/"Y"/"Z";
+<Alphabet_Lower> PASSTHROUGH ="a"/"b"/"c"/"d"/"e"/"f"/"g"/"h"/"i"/"j"/"k"/"l"/"m"/"n"/"o"/"p"/"q"/"r"/"s"/"t"/"u"/"v"/"w"/"x"/"y"/"z";
+<Num> PASSTHROUGH = "0"/"1"/"2"/"3"/"4"/"5"/"6"/"7"/"8"/"9";
+<Spaces> PASSTHROUGH = "\t"/"\r"/" ";
+<Specials> PASSTHROUGH = "+"/"*"/"-"/"&"/"!"/"?"/"<"/">"/"""/"("/")"/"_"/","/"/"/";"/"="/"\"/"#"/":"/"|"/"."/"'"/"%";
+<ASCII> PASSTHROUGH = <Alphabet_Lower>/<Alphabet_Upper>/<Num>/<Spaces>/<Specials>; #Need to update packratparsergenerator to allow e.g uint[0-27] rather than needing to write everything out manually #
+
+<rm_whitespace> DELETE = (" "/"\n"/"\t")*;
+<space_seperator> DELETE = " "; #So I can remove meaningless whitespace #
+<terminator> DELETE = <space_seperator>*, "\n"; #Essentially acts as C semicolon for most things# 
+<indent> DELETE = (" "," "," "," ")
+            /"\t"; 
+<indentation> = <indent>*; # Acts as } in C #
+<operator_assignment> DELETE = <space_seperator>*, "=", <space_seperator>*;
+<multiuse_seperator> DELETE = <space_seperator>*, ",", <space_seperator>*;
+
+<int> COLLECT = "-"?, (((!"0", <Num>), <Num>*)/"0"); 
+<typedef_int> DELETE = "i", "n", "t";
+<type_int> = <typedef_int>;
+
+<typedef> PASSTHROUGH = <type_int>; #Currently only int #
+
+
+<variable> COLLECT = (<Alphabet_Upper>/<Alphabet_Lower>/"_")+;
+<variable_assignment> = <indentation>, <typedef>, <space_seperator>+, <variable>, <operator_assignment>, <maths>; #Currently only way to declare a variable#
+<variable_modification> = <indentation>, <variable>, <operator_assignment>, <maths>;
+
+
+<sym_add> DELETE = "+"; # Maths start#
+<sym_subtract> DELETE = "-";
+<sym_modulo> DELETE = "%";
+<sym_division> DELETE = "/";
+<sym_multiplication> DELETE = "*";
+<sym_power> DELETE = "*", "*";
+<sym_open_bracket> DELETE = "(";
+<sym_close_bracket> DELETE = ")";
+
+<add> = <maths_argument>, <sym_add>, <maths>;
+<subtract> = <maths_argument>, <sym_subtract>, <maths>;
+<modulo> = <maths_argument>, <sym_modulo>, <maths>;
+<division> = <maths_argument>, <sym_division>, <maths>;
+<multiplication> = <maths_argument>, <sym_multiplication>, <maths>;
+<power> = <maths_argument>, <sym_power>, <maths>;
+<subexpression> PASSTHROUGH = <sym_open_bracket>, <maths>, <sym_close_bracket>; #Maths end#
+
+<maths_argument> PASSTHROUGH =  <space_seperator>*, 
+                                (<subexpression>/<int>/<variable>), 
+                                <space_seperator>*;
+
+<maths> PASSTHROUGH =   <space_seperator>*, 
+                        (<add>/<subtract>/<power>/<multiplication>/<division>/<modulo>/<maths_argument>), 
+                        <space_seperator>*;
+
+<special_instructions> PASSTHROUGH = <syscall>;
+
+<syscall_def> DELETE = "s", "y", "s", "c", "a", "l", "l";
+<syscall> = <indentation>, <syscall_def>, (<space_seperator>, (<int>/<variable>))*;
+
+<grammar> = <rm_whitespace>,
+            ((<syscall>/<variable_assignment>/<variable_modification>), <terminator>)*,
+            (<syscall>/<variable_assignment>/<variable_modification>)?,
+            <rm_whitespace>;

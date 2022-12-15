@@ -1,0 +1,4 @@
+int status_code = 0
+int linux_exit_syscall = 60
+status_code = 42
+syscall linux_exit_syscall status_code 90 
