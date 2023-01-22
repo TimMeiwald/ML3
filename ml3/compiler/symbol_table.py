@@ -78,5 +78,8 @@ class BSS():
         return response
     
     def set_offset(self, offset: int):
+        """Modifies the offset position by the offset. This is necessary because 
+        it's not possible to know the memory location until you know the desired entrypoint.
+        Which would depend on the size of the total file. """
         for item in self.__stack__:
             item[3] = item[3] + offset

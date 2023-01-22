@@ -122,12 +122,17 @@ class Compiler():
         # TODO FIX THIS SHIT
         #p_header_text = Segment(1, 0,start_address+segment_bss_size,start_address+segment_bss_size, sizeof_text, sizeof_text, 0x5, 0)
         #p_header_data = Segment(1, 0,start_address,start_address, 0, segment_bss_size, 0x4, 0)
-        p_header_text = Segment(1, 0x001000,0x401000,0x401000,0x001000, 0x001000, 0x5, 2**12)
-        p_header_data = Segment(1, 0x002000,0x402000,0x402000,0x001000, 0x001000, 0x2, 2**12)
+        #p_header_text = Segment(1, 0x001000,0x401000,0x401000,0x001000, 0x001000, 0x5, 2**12)
+        #p_header_data = Segment(1, 0x002000,0x402000,0x402000,0x001000, 0x001000, 0x2, 2**12)
         
-        ELF.add_program_segment([p_header_text.binary(), self.TEXT.get_binary()])
-        ELF.add_program_segment([p_header_data.binary(), Binary(0,0,0)])
-        return ELF
+        # ELF.add_program_segment([p_header_text.binary(), self.TEXT.get_binary()])
+        # ELF.add_program_segment([p_header_data.binary(), Binary(0,0,0)])
+        
+        ELF.set_entry_point(0x402000) # Temp ideally need to get it from somewhere
+        ELF.add_segment(7, len(segment_text), len(segment_text), segment_text)
+        ELF.add_segment(7, 0, 0x001000, None)
+        bin = ELF.generate_executable().binary()
+        return bin
 
 class TEXT():
 

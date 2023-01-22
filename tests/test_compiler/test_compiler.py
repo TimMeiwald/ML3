@@ -2,6 +2,9 @@
 from tests.conftest import compiler_test
 from ml3.compiler.symbol_table import SymbolTable
 from ml3.compiler.compiler import Compiler
+from os import getcwd
+from os.path import join
+
 
 def test_compiler_1():
     node = compiler_test(1)
@@ -20,7 +23,8 @@ def test_compiler_1():
     x = c.construct_elf_binary()
 
     #print(x._generate_file()) # Not stateless affects something not good
-    x = x.write_to_file("TestExecutable.elf")
+    with open(join(getcwd(), "tests", "test_compiler", "Test1"), "wb") as fp: # Can be used to write it out as a binary file
+        fp.write(x)
     #print(c.construct_elf_binary()._generate_file())
     assert 0 == 1
 
@@ -44,6 +48,7 @@ def test_compiler_3():
     x = c.construct_elf_binary()
 
     #print(x._generate_file()) # Not stateless affects something not good
-    x = x.write_to_file("TestExecutable2.elf")
     #print(c.construct_elf_binary()._generate_file())
+    with open(join(getcwd(), "tests", "test_compiler", "Test3"), "wb") as fp: # Can be used to write it out as a binary file
+        fp.write(x)
     assert 0 == 1
