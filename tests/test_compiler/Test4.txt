@@ -1,4 +1,4 @@
 int status_code = 0
-int linux_exit_syscall = 56+4
+int linux_exit_syscall = 180/3
 status_code = 42+4
 syscall linux_exit_syscall status_code

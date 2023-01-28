@@ -34,6 +34,7 @@ class Compiler():
         self._functions_ = {Rules.variable_assignment: self._variable_assignment,
                             Rules.variable_modification: self._variable_modification, 
                             Rules.syscall: self._syscall,
+                            Rules.add: self._maths,
                 }
         self._symbol_table_ = symbol_table
         self.TEXT = TEXT()
@@ -54,7 +55,7 @@ class Compiler():
         print("################ COMPILER START ###################")
         print(self._symbol_table_)
         for node in grammar_node.children:
-            func = self._functions_[node.type]
+            func = self._functions_[node.type] 
             func(node)
 
     def _variable_assignment(self, node):
@@ -64,13 +65,19 @@ class Compiler():
         value = node.children[2].content
 
         vname, vsize, vtype, vaddress = self._symbol_table_.get_variable(name)
-
-        if(type == Rules.type_int and vtype == RawType.INT):
+        print(type, vtype, value)
+        if(type == Rules.type_int and vtype == RawType.INT and value != None):
+            # Handles constant value allocations 
             value = int(value)
-            #print(f"ASSIGN {value} to Address: {vaddress}")
             self.TEXT.push_instr(asm.load_const_to_register_displacement_only_32_bit(0, value), "; load constant to register EAX")
             self.TEXT.push_instr(asm.load_register_value_to_memory_address_only_32_bit(0, vaddress), f"; load register value from EAX to memory address {vaddress}")
             return
+        elif(type == Rules.type_int and vtype == RawType.INT and value == None):
+            # Implies there's another node. 
+            value = node.children[2]
+            register_response_written_to = self._maths(value)
+            self.TEXT.push_instr(asm.load_register_value_to_memory_address_only_32_bit(register_response_written_to, vaddress), f"; load register value from register_{register_response_written_to} to memory address {vaddress}")
+            
         raise Exception
 
     def _variable_modification(self, node):
@@ -113,6 +120,37 @@ class Compiler():
         self.TEXT.push_instr(asm.syscall(), "; syscall")
 
 
+    def _maths(self, node) -> int:
+        """Returns int for which register response has been written too"""
+        if(node.type == Rules.add):
+            return self._add(node)
+        elif(node.type == Rules.division):
+            self._division(node)
+        else:
+            raise NotImplementedError(f"Have not implemented {node.type} yet.")
+    
+    def _add(self, node):
+        LHS = node.children[0]
+        RHS = node.children[1]
+        if(LHS.type == Rules.int):
+            LHS = int(LHS.content)
+        else:
+            raise NotImplementedError("Need to handle subnodes for add.")
+        if(RHS.type == Rules.int):
+            RHS = int(RHS.content)
+        else:
+            raise NotImplementedError("Need to handle subnodes for add.")
+        # Ideally if both are raw ints not variable's we'd just sum at compile time, but I want to test that 
+        # the compiler works properly and not that python can add numbers so not doing that for the time being. 
+        self.TEXT.push_instr(asm.add_register_one_with_register_two(0, 1)) # Always EAX and EDI because not optimized
+        return 0 # Return that result in EAX
+
+    def _division(self, node):
+        LHS = node.children[0]
+        RHS = node.children[1]
+        return 
+
+
     def construct_elf_binary(self):
         ELF = x86_64()
         # BSS Data is Zero Initialized Aka no data but memory is allocated in program header
@@ -120,17 +158,10 @@ class Compiler():
         segment_text = self.TEXT.get_binary()
         print(f"TEXT Segment Size: {segment_text.size}")
         # TODO FIX THIS SHIT
-        #p_header_text = Segment(1, 0,start_address+segment_bss_size,start_address+segment_bss_size, sizeof_text, sizeof_text, 0x5, 0)
-        #p_header_data = Segment(1, 0,start_address,start_address, 0, segment_bss_size, 0x4, 0)
-        #p_header_text = Segment(1, 0x001000,0x401000,0x401000,0x001000, 0x001000, 0x5, 2**12)
-        #p_header_data = Segment(1, 0x002000,0x402000,0x402000,0x001000, 0x001000, 0x2, 2**12)
-        
-        # ELF.add_program_segment([p_header_text.binary(), self.TEXT.get_binary()])
-        # ELF.add_program_segment([p_header_data.binary(), Binary(0,0,0)])
-        
-        ELF.set_entry_point(0x402000) # Temp ideally need to get it from somewhere
+
+        ELF.set_entry_point(0x402040) # Temp ideally need to get it from somewhere Entry point needs to be 64 bytes in(0x40 bytes) to start at correct location.
         ELF.add_segment(7, len(segment_text), len(segment_text), segment_text)
-        ELF.add_segment(7, 0, 0x001000, None)
+        ELF.add_segment(7, 0, segment_bss_size, None)
         bin = ELF.generate_executable().binary()
         return bin
 
